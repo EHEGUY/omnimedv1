@@ -1,0 +1,29 @@
+# Python environment
+omnimed_env/
+__pycache__/
+*.pyc
+
+# Node.js
+node_modules/
+.next/
+out/
+build/
+
+# Secrets & OS
+.env
+.DS_Store
+Thumbs.db
+
+# Large Models (if they are in your folder)
+*.bin
+*.pt
+*.pth
+# Unsloth & Model Caches
+unsloth_compiled_cache/
+.triton/
+*.safetensors
+*.gguf
+
+# Node
+frontend/node_modules/
+frontend/.next/

@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyMedia, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 
 interface AnalysisResult {
   findings: string;
@@ -62,11 +62,13 @@ export default function OutputPanel({ result, isLoading }: OutputPanelProps) {
             </div>
           </div>
         ) : (
-          <Empty
-            icon="📋"
-            title="No Analysis Yet"
-            description="Upload a scan and generate a report to view results here"
-          />
+          <Empty>
+            <EmptyMedia variant="icon">📋</EmptyMedia>
+            <EmptyHeader>
+              <EmptyTitle>No Analysis Yet</EmptyTitle>
+              <EmptyDescription>Upload a scan and generate a report to view results here</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
       </CardContent>
     </Card>

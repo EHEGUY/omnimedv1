@@ -6,8 +6,9 @@ import Footer from '@/components/footer';
 import LandingPage from '@/components/pages/landing';
 import PatientPortal from '@/components/pages/patient-portal';
 import HospitalPortal from '@/components/pages/hospital-portal';
+import MethodologyPage from '@/components/pages/methodology';
 
-type View = 'home' | 'patients' | 'hospitals';
+type View = 'home' | 'patients' | 'hospitals' | 'methodology';
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<View>('home');
@@ -35,6 +36,9 @@ export default function Home() {
       // Talking to your local FastAPI backend on port 8000
       const response = await fetch("http://127.0.0.1:8000/analyze", {
         method: "POST",
+        headers: {
+          "x-api-key": process.env.NEXT_PUBLIC_OMNIMED_API_KEY || "your-default-secret-key"
+        },
         body: formData,
       });
 
@@ -63,24 +67,17 @@ export default function Home() {
 
         {/* B2C / Patient View */}
         {currentView === 'patients' && (
-          <PatientPortal 
-            uploadedFile={uploadedFile}
-            setUploadedFile={setUploadedFile}
-            report={report}
-            isLoading={isLoading}
-            onGenerateReport={handleGenerateReport}
-          />
+          <PatientPortal />
         )}
 
         {/* B2B / Hospital View */}
         {currentView === 'hospitals' && (
-          <HospitalPortal 
-            uploadedFile={uploadedFile}
-            setUploadedFile={setUploadedFile}
-            report={report}
-            isLoading={isLoading}
-            onGenerateReport={handleGenerateReport}
-          />
+          <HospitalPortal />
+        )}
+
+        {/* Methodology View */}
+        {currentView === 'methodology' && (
+          <MethodologyPage />
         )}
       </main>
 

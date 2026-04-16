@@ -1,6 +1,6 @@
 'use client';
 
-type View = 'home' | 'patients' | 'hospitals';
+type View = 'home' | 'patients' | 'hospitals' | 'methodology';
 
 interface NavbarProps {
   currentView: View;
@@ -28,6 +28,7 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
               { id: 'home' as View, label: 'Home' },
               { id: 'patients' as View, label: 'For Patients' },
               { id: 'hospitals' as View, label: 'For Hospitals' },
+              { id: 'methodology' as View, label: 'Methodology' },
             ].map((item) => (
               <button
                 key={item.id}

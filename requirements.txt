@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pillow
+numpy
+opencv-python
+torch
+torchvision
+
+# Optional: only needed for real MedGemma inference (api.py will run without it)
+unsloth

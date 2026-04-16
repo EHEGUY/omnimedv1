@@ -1,29 +1,87 @@
-# Python environment
-omnimed_env/
+# =======================
+# Python & Environments
+# =======================
+.venv/
+venv/
+env/
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+coverage.xml
+*.cover
+.coverage
+htmlcov/
 
-# Node.js
+# =======================
+# Node.js & Frontend
+# =======================
 node_modules/
+frontend/node_modules/
 .next/
+frontend/.next/
 out/
 build/
+dist/
+.npm/
+.yarn/
+*.tsbuildinfo
 
-# Secrets & OS
-.env
-.DS_Store
-Thumbs.db
-
-# Large Models (if they are in your folder)
-*.bin
+# =======================
+# Machine Learning & AI Models
+# =======================
+# PyTorch & Transformers
 *.pt
 *.pth
-# Unsloth & Model Caches
-unsloth_compiled_cache/
-.triton/
+*.bin
 *.safetensors
 *.gguf
+*.onnx
+*.h5
+*.pb
 
-# Node
-frontend/node_modules/
-frontend/.next/
+# Unsloth & Triton Caches
+unsloth_compiled_cache/
+backend/unsloth_compiled_cache/
+*/unsloth_compiled_cache/
+.triton/
+
+# Local HuggingFace cache if created locally
+.cache/
+huggingface/
+
+# =======================
+# Secrets & Configs
+# =======================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+credentials.json
+
+# =======================
+# OS & Editor Files
+# =======================
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =======================
+# Logs & Archives
+# =======================
+*.log
+*.zip
+*.tar
+*.tar.gz
+*.rar
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

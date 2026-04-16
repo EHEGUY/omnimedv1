@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniMed AI — Exhibition Poster</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #e8e4dc;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 32px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .poster {
+    width: 900px;
+    height: 1200px;
+    background: #f5f2ec;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: #1a1a2e;
+    padding: 44px 52px 36px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    border: 40px solid rgba(255,255,255,0.04);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 200px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    border: 30px solid rgba(255,255,255,0.03);
+  }
+  .header-badge {
+    display: inline-block;
+    background: #e8a838;
+    color: #1a1a2e;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 2px;
+    margin-bottom: 18px;
+  }
+  .poster-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 40px;
+    line-height: 1.15;
+    color: #f5f2ec;
+    margin-bottom: 10px;
+    max-width: 680px;
+    position: relative;
+    z-index: 1;
+  }
+  .poster-title span { color: #e8a838; }
+  .author-line {
+    font-size: 12px;
+    color: rgba(245,242,236,0.65);
+    font-weight: 400;
+    margin-bottom: 5px;
+    position: relative;
+    z-index: 1;
+  }
+  .author-names {
+    font-size: 13px;
+    color: rgba(245,242,236,0.9);
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+  }
+  .affiliation {
+    font-size: 11px;
+    color: rgba(245,242,236,0.5);
+    margin-top: 4px;
+    font-style: italic;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── BODY ── */
+  .body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 52px;
+    gap: 0;
+    justify-content: space-between;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(26,26,46,0.1);
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .section:last-child { border-bottom: none; }
+
+  .section-label {
+    width: 110px;
+    flex-shrink: 0;
+  }
+  .sec-num {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #e8a838;
+    margin-bottom: 3px;
+  }
+  .sec-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a2e;
+    line-height: 1.2;
+  }
+  .section-bar {
+    width: 3px;
+    height: 48px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .section-content {
+    flex: 1;
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+  }
+  .sec-text { flex: 1; }
+  .sec-text p {
+    font-size: 10.5px;
+    line-height: 1.65;
+    color: #2d2d44;
+  }
+  .sec-visual {
+    flex-shrink: 0;
+  }
+
+  /* ── INTRO SECTION ── */
+  .intro .section-bar { background: #3b6d8c; }
+  .intro .sec-visual svg { width: 130px; height: 72px; }
+
+  /* ── METHOD SECTION ── */
+  .method .section-bar { background: #2d6a4f; }
+  .method .sec-visual svg { width: 190px; height: 68px; }
+
+  /* ── RESULTS SECTION ── */
+  .results .section-bar { background: #9d4edd; }
+  .results .sec-visual { display: flex; gap: 10px; align-items: flex-end; }
+
+  /* ── DISCUSSION SECTION ── */
+  .discussion .section-bar { background: #c77dff; }
+  .discussion .sec-visual svg { width: 130px; height: 70px; }
+
+  /* ── CONCLUSION SECTION ── */
+  .conclusion .section-bar { background: #e8a838; }
+  .conclusion-takeaways {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 0;
+  }
+  .takeaway {
+    background: #1a1a2e;
+    border-radius: 8px;
+    padding: 14px 14px;
+    text-align: center;
+  }
+  .takeaway-icon { font-size: 16px; margin-bottom: 6px; }
+  .takeaway-text {
+    font-size: 10px;
+    font-weight: 600;
+    color: #f5f2ec;
+    line-height: 1.45;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    flex-shrink: 0;
+    background: #1a1a2e;
+    padding: 14px 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .footer-logo-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-placeholder {
+    width: 44px; height: 44px;
+    border: 1.5px dashed rgba(245,242,236,0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-placeholder svg { width: 20px; height: 20px; }
+  .logo-text {
+    font-size: 10px;
+    color: rgba(245,242,236,0.5);
+    line-height: 1.5;
+    font-style: italic;
+  }
+  .footer-conference {
+    text-align: center;
+    flex: 1;
+  }
+  .conf-name {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(245,242,236,0.4);
+  }
+  .conf-year {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e8a838;
+  }
+  .qr-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .qr-placeholder {
+    width: 52px; height: 52px;
+    border: 1.5px dashed rgba(245,242,236,0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.03);
+  }
+  .qr-label {
+    font-size: 8px;
+    color: rgba(245,242,236,0.35);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── BAR CHART (results) ── */
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 62px; }
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .bar { width: 18px; border-radius: 3px 3px 0 0; }
+  .bar-lbl { font-size: 8px; color: #666; }
+
+  @media print {
+    body { padding: 0; background: white; }
+    .poster { width: 100%; height: auto; min-height: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="poster">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-badge">Symposium Hackathon 2026</div>
+    <div class="poster-title">
+      OmniMed AI: <span>Unified Multimodal</span><br>Diagnostics on Consumer-Grade Hardware
+    </div>
+    <div style="margin-top:14px;">
+      <div class="author-line">Developed By</div>
+      <div class="author-names"> · [TEAM DATABAES] </div>
+      <div class="affiliation">[HOMI BHABHA STATE UNIVERSITY] — </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- INTRODUCTION -->
+    <div class="section intro">
+      <div class="section-label">
+        <div class="sec-num">01</div>
+        <div class="sec-title">Overview</div>
+      </div>
+      <div class="section-bar"></div>
+      <div class="section-content">
+        <div class="sec-text">
+          <p>OmniMed AI is a unified multimodal diagnostic platform integrating three distinct medical specialties — Neurology, Orthopaedics, and Dermatology — into a single clinical interface. Most medical AI research assumes access to enterprise-grade GPUs (14 GB+ VRAM). OmniMed's core innovation is its Hardware-Agnostic Architecture, enabling state-of-the-art deep learning models to run on consumer-grade hardware with only 6 GB VRAM, making advanced diagnostics accessible to small clinics and resource-limited settings.</p>
+        </div>
+        <div class="sec-visual">
+          <!-- Motivation diagram: Problem → Solution -->
+          <svg viewBox="0 0 130 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="16" width="36" height="36" rx="5" fill="#3b6d8c" opacity="0.15" stroke="#3b6d8c" stroke-width="1.5"/>
+            <text x="20" y="33" text-anchor="middle" font-size="8" font-family="DM Sans" fill="#3b6d8c" font-weight="600">HIGH</text>
+            <text x="20" y="44" text-anchor="middle" font-size="8" font-family="DM Sans" fill="#3b6d8c" font-weight="600">VRAM</text>
+            <line x1="40" y1="34" x2="56" y2="34" stroke="#1a1a2e" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <polygon points="54,30 62,34 54,38" fill="#1a1a2e"/>
+            <rect x="63" y="16" width="36" height="36" rx="5" fill="#e8a838" opacity="0.15" stroke="#e8a838" stroke-width="1.5"/>
+            <text x="81" y="33" text-anchor="middle" font-size="8" font-family="DM Sans" fill="#c77a00" font-weight="600">OMNI</text>
+            <text x="81" y="43" text-anchor="middle" font-size="8" font-family="DM Sans" fill="#c77a00" font-weight="600">MED</text>
+            <line x1="101" y1="34" x2="117" y2="34" stroke="#1a1a2e" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <polygon points="115,30 123,34 115,38" fill="#1a1a2e"/>
+            <rect x="2" y="58" width="126" height="11" rx="3" fill="#1a1a2e" opacity="0.07"/>
+            <text x="65" y="67" text-anchor="middle" font-size="7.5" font-family="DM Sans" fill="#1a1a2e" font-weight="500">Hardware barrier → accessible AI diagnostics</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- METHODOLOGY / ARCHITECTURE -->
+    <div class="section method">
+      <div class="section-label">
+        <div class="sec-num">02</div>
+        <div class="sec-title">Architecture</div>
+      </div>
+      <div class="section-bar"></div>
+      <div class="section-content">
+        <div class="sec-text">
+          <p>The core innovation is the <strong>Singleton Model-Loading Mechanism</strong>. Instead of loading all three models simultaneously — which would exceed 6 GB VRAM — the system treats GPU memory as a shared resource. Only one model occupies VRAM at a time. On module switch, the active model is fully unloaded and <em>torch.cuda.empty_cache()</em> is triggered to purge residual allocations before the next architecture is loaded. The frontend (Next.js + Tailwind CSS) provides a seamless dark-mode clinical dashboard, while the Python/PyTorch REST backend handles all inference and image pre-processing (auto-resize to model-specific input, e.g. 224×224 for ResNet).</p>
+        </div>
+        <div class="sec-visual">
+          <!-- Pipeline flow: LOAD → INFER → UNLOAD → PURGE -->
+          <svg viewBox="0 0 200 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="18" width="38" height="28" rx="4" fill="#2d6a4f" opacity="0.12" stroke="#2d6a4f" stroke-width="1.5"/>
+            <text x="21" y="34" text-anchor="middle" font-size="7.5" font-family="DM Sans" fill="#2d6a4f" font-weight="700">LOAD<tspan x="21" dy="9">MODEL</tspan></text>
+            <polyline points="40,32 50,32" stroke="#2d6a4f" stroke-width="1.5"/>
+            <polygon points="48,29 54,32 48,35" fill="#2d6a4f"/>
+            <rect x="54" y="18" width="38" height="28" rx="4" fill="#2d6a4f" opacity="0.12" stroke="#2d6a4f" stroke-width="1.5"/>
+            <text x="73" y="34" text-anchor="middle" font-size="7.5" font-family="DM Sans" fill="#2d6a4f" font-weight="700">INFER<tspan x="73" dy="9">&amp; OUTPUT</tspan></text>
+            <polyline points="92,32 102,32" stroke="#2d6a4f" stroke-width="1.5"/>
+            <polygon points="100,29 106,32 100,35" fill="#2d6a4f"/>
+            <rect x="106" y="18" width="38" height="28" rx="4" fill="#2d6a4f" opacity="0.12" stroke="#2d6a4f" stroke-width="1.5"/>
+            <text x="125" y="34" text-anchor="middle" font-size="7.5" font-family="DM Sans" fill="#2d6a4f" font-weight="700">UNLOAD<tspan x="125" dy="9">MODEL</tspan></text>
+            <polyline points="144,32 154,32" stroke="#2d6a4f" stroke-width="1.5"/>
+            <polygon points="152,29 158,32 152,35" fill="#2d6a4f"/>
+            <rect x="158" y="18" width="38" height="28" rx="4" fill="#2d6a4f" opacity="0.12" stroke="#2d6a4f" stroke-width="1.5"/>
+            <text x="177" y="34" text-anchor="middle" font-size="7.5" font-family="DM Sans" fill="#2d6a4f" font-weight="700">PURGE<tspan x="177" dy="9">CUDA</tspan></text>
+            <text x="100" y="65" text-anchor="middle" font-size="7" font-family="DM Sans" fill="#666">Singleton Pattern · PyTorch · torch.cuda.empty_cache()</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS / MODULES -->
+    <div class="section results">
+      <div class="section-label">
+        <div class="sec-num">03</div>
+        <div class="sec-title">Medical Modules</div>
+      </div>
+      <div class="section-bar"></div>
+      <div class="section-content">
+        <div class="sec-text">
+          <p><strong>Neurology (2D U-Net):</strong> Brain MRI abnormality segmentation. 3D NIfTI volumes are decomposed into 2D slices for lesion and tumour detection within the 6 GB constraint. <strong>Orthopaedics (ResNet-18):</strong> Binary classification (Normal vs. Abnormal) on musculoskeletal X-rays using the MURA dataset, providing a second opinion in high-throughput trauma centres. <strong>Dermatology (EfficientNet-B0):</strong> Skin lesion classification (Malignant vs. Benign). EfficientNet's compact footprint is ideal for the shared-VRAM model — high accuracy, minimal memory overhead.</p>
+        </div>
+        <div class="sec-visual">
+          <!-- Bar chart: three modules + overall -->
+          <div class="bar-chart">
+            <div class="bar-wrap">
+              <div class="bar" style="height:42px;background:#9d4edd;opacity:0.5;"></div>
+              <div class="bar-lbl">Neuro</div>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar" style="height:52px;background:#9d4edd;opacity:0.7;"></div>
+              <div class="bar-lbl">Ortho</div>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar" style="height:56px;background:#9d4edd;"></div>
+              <div class="bar-lbl">Dermo</div>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar" style="height:38px;background:#e8a838;opacity:0.85;"></div>
+              <div class="bar-lbl">VRAM</div>
+            </div>
+          </div>
+        </div>
+        <!-- Key stat pills -->
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+          <div style="background:#9d4edd;border-radius:6px;padding:7px 12px;text-align:center;">
+            <div style="font-size:16px;font-weight:700;color:#fff;">57%</div>
+            <div style="font-size:8px;color:rgba(255,255,255,0.75);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;">VRAM Saved</div>
+          </div>
+          <div style="background:#1a1a2e;border-radius:6px;padding:7px 12px;text-align:center;">
+            <div style="font-size:16px;font-weight:700;color:#e8a838;">3</div>
+            <div style="font-size:8px;color:rgba(245,242,236,0.6);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;">Specialties</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISCUSSION / IMPACT -->
+    <div class="section discussion">
+      <div class="section-label">
+        <div class="sec-num">04</div>
+        <div class="sec-title">Impact</div>
+      </div>
+      <div class="section-bar"></div>
+      <div class="section-content">
+        <div class="sec-text">
+          <p>OmniMed AI directly challenges the assumption that medical AI requires cloud compute or enterprise GPUs. By reducing peak VRAM by over 57%, the platform runs on standard laptops found in small clinics and rural healthcare centres. The unified dashboard eliminates the need to switch between three separate diagnostic tools, reducing cognitive load for clinicians. The Singleton Loader is plug-and-play: adding a Cardiology or Pulmonology module requires no hardware upgrade. Limitations include current reliance on 2D slice extraction for MRI (full 3D inference is a future target) and dataset scope for orthopaedic classification.</p>
+        </div>
+        <div class="sec-visual">
+          <!-- Comparison: OmniMed vs Standard Deployment -->
+          <svg viewBox="0 0 130 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="58" height="36" rx="5" fill="#c77dff" opacity="0.1" stroke="#c77dff" stroke-width="1"/>
+            <text x="31" y="16" text-anchor="middle" font-size="7.5" font-family="DM Sans" fill="#7b35a0" font-weight="700">OMNIMED</text>
+            <text x="31" y="30" text-anchor="middle" font-size="13" font-family="DM Sans" fill="#7b35a0" font-weight="700">6 GB</text>
+            <rect x="68" y="2" width="58" height="36" rx="5" fill="#1a1a2e" opacity="0.07" stroke="#1a1a2e" stroke-width="1" stroke-dasharray="3 2"/>
+            <text x="97" y="16" text-anchor="middle" font-size="7.5" font-family="DM Sans" fill="#555" font-weight="700">STANDARD</text>
+            <text x="97" y="30" text-anchor="middle" font-size="13" font-family="DM Sans" fill="#555" font-weight="700">14 GB+</text>
+            <text x="65" y="56" text-anchor="middle" font-size="7" font-family="DM Sans" fill="#888">↓ 57% peak VRAM vs. naive multi-load</text>
+            <line x1="2" y1="62" x2="128" y2="62" stroke="#c77dff" stroke-width="0.5" stroke-dasharray="4 3"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONCLUSION -->
+    <div class="section conclusion" style="flex-direction:column;border-bottom:none;padding-top:14px;padding-bottom:16px;">
+      <!-- Top row: label + bar + paragraph -->
+      <div style="display:flex;gap:24px;align-items:flex-start;margin-bottom:14px;">
+        <div class="section-label" style="width:110px;flex-shrink:0;">
+          <div class="sec-num">05</div>
+          <div class="sec-title">Conclusion</div>
+        </div>
+        <div class="section-bar" style="width:3px;height:44px;border-radius:2px;background:#e8a838;flex-shrink:0;margin-top:4px;"></div>
+        <p style="font-size:10.5px;line-height:1.65;color:#2d2d44;flex:1;">OmniMed AI demonstrates that multi-specialty medical AI diagnostics can be delivered on consumer-grade hardware through intelligent GPU memory management. The Singleton Loader architecture is a validated, extensible framework for real-world clinical deployment. Future work will target full 3D MRI volumetric inference, expanded specialty modules (Cardiology, Pulmonology), and cloud-optional hybrid deployment.</p>
+      </div>
+      <!-- Takeaway cards — indented to align with content column -->
+      <div style="padding-left:137px;">
+        <div class="conclusion-takeaways">
+          <div class="takeaway">
+            <div class="takeaway-icon">◆</div>
+            <div class="takeaway-text">57% peak VRAM reduction via Singleton model switching</div>
+          </div>
+          <div class="takeaway">
+            <div class="takeaway-icon">◆</div>
+            <div class="takeaway-text">3 specialties — Neuro, Ortho, Dermo — one unified dashboard</div>
+          </div>
+          <div class="takeaway" style="background:#e8a838;">
+            <div class="takeaway-icon" style="color:#1a1a2e;">◆</div>
+            <div class="takeaway-text" style="color:#1a1a2e;">Plug-and-play loader — add modules, zero extra hardware</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-logo-box">
+      <div class="logo-placeholder">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="10" r="8" stroke="rgba(245,242,236,0.3)" stroke-width="1.5"/>
+          <path d="M5 10 Q10 4 15 10 Q10 16 5 10Z" stroke="rgba(245,242,236,0.3)" stroke-width="1" fill="none"/>
+          <line x1="10" y1="2" x2="10" y2="18" stroke="rgba(245,242,236,0.3)" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <br>
+        [HOMI BHABHA STATE UNIVERSITY]
+      </div>
+    </div>
+
+    <div class="footer-conference">
+      <div class="conf-name">HACKATHON</div>
+      <div class="conf-year">2026
+      </div>
+      <div style="font-size:8px;color:rgba(245,242,236,0.35);margin-top:2px;">[]</div>
+    </div>
+
+    <div class="qr-box">
+      <div class="qr-placeholder">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="12" height="12" rx="1.5" stroke="rgba(245,242,236,0.4)" stroke-width="1.5"/>
+          <rect x="7" y="7" width="6" height="6" rx="0.5" fill="rgba(245,242,236,0.25)"/>
+          <rect x="20" y="4" width="12" height="12" rx="1.5" stroke="rgba(245,242,236,0.4)" stroke-width="1.5"/>
+          <rect x="23" y="7" width="6" height="6" rx="0.5" fill="rgba(245,242,236,0.25)"/>
+          <rect x="4" y="20" width="12" height="12" rx="1.5" stroke="rgba(245,242,236,0.4)" stroke-width="1.5"/>
+          <rect x="7" y="23" width="6" height="6" rx="0.5" fill="rgba(245,242,236,0.25)"/>
+          <rect x="20" y="20" width="3" height="3" fill="rgba(245,242,236,0.4)" rx="0.5"/>
+          <rect x="25" y="20" width="3" height="3" fill="rgba(245,242,236,0.4)" rx="0.5"/>
+          <rect x="29" y="20" width="3" height="3" fill="rgba(245,242,236,0.4)" rx="0.5"/>
+          <rect x="20" y="25" width="3" height="3" fill="rgba(245,242,236,0.4)" rx="0.5"/>
+          <rect x="25" y="29" width="7" height="3" fill="rgba(245,242,236,0.4)" rx="0.5"/>
+        </svg>
+      </div>
+      <div class="qr-label">Scan for demo</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

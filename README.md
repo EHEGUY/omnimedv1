@@ -113,4 +113,4 @@ Our REST architecture emphasizes predictable behaviors and robust fault toleranc
 > OmniMed is firmly designated for **research and clinical decision support purposes only**. It is categorically not a substitute for professional medical advice, diagnosis, or treatment. All AI-generated inferences, including text generation and Grad-CAM visual overlays, must be rigorously verified by board-certified medical personnel prior to any clinical implementation or patient dissemination.
 
 ---
-*Engineered and maintained by the OmniMed Core Tech Team.*
+*Engineered and maintained by the ME.*

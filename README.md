@@ -49,7 +49,7 @@ graph TD
 - **Interactive Second Opinions:** Secure, context-aware chat interface enabling patients to inquire about scan results and symptoms.
 - **Privacy Guaranteed:** 100% local processing ensures HIPAA/GDPR compliance by design. No external API calls are made for inference.
 
-### 3. State-of-the-Art Inference Engine
+### 3. Inference Engine
 - **Flexible Backend Architecture:** Support for `Unsloth` (optimized for 4-bit quantization and maximum inference speed) and standard `HuggingFace Transformers`.
 - **Dynamic Resource Management:** Capable of graceful degradation to a "mock" engine for environments lacking adequate VRAM, ensuring uninterrupted UI development and testing.
 

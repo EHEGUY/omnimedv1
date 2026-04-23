@@ -111,7 +111,7 @@ _MODEL_NAME = os.getenv("OMNIMED_MODEL_ID", "unsloth/medgemma-1.5-4b-it-bnb-4bit
 
 # On low-VRAM laptops, autoloading at import time can crash the process.
 # Default: do NOT autoload; call /load-model (or set OMNIMED_AUTOSTART=1).
-_AUTOSTART = os.getenv("OMNIMED_AUTOSTART", "0") == "1"
+_AUTOSTART = os.getenv("OMNIMED_AUTOSTART", "1") == "1"
 
 engine_pref = os.getenv("OMNIMED_ENGINE", "transformers" if sys.platform.startswith("win") else "unsloth").lower()
 
@@ -231,7 +231,7 @@ def _generate_medgemma(messages: list[dict], scan_image: Image.Image) -> str:
         prompt_text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = processor(text=prompt_text, images=scan_image, return_tensors="pt").to("cuda")
         with torch.inference_mode():
-            max_new_tokens = int(os.getenv("OMNIMED_MAX_NEW_TOKENS", "200"))
+            max_new_tokens = int(os.getenv("OMNIMED_MAX_NEW_TOKENS", "600"))
             outputs = model.generate(**inputs, max_new_tokens=max_new_tokens)
         input_len = inputs["input_ids"].shape[-1]
         if hasattr(processor, "decode"):
@@ -249,7 +249,7 @@ def _generate_medgemma(messages: list[dict], scan_image: Image.Image) -> str:
             return_tensors="pt",
         ).to("cuda")
         with torch.inference_mode():
-            max_new_tokens = int(os.getenv("OMNIMED_MAX_NEW_TOKENS", "200"))
+            max_new_tokens = int(os.getenv("OMNIMED_MAX_NEW_TOKENS", "600"))
             outputs = model.generate(input_ids=prompt_ids, max_new_tokens=max_new_tokens)
         if hasattr(processor, "decode"):
             return fallback_warning + processor.decode(outputs[0][prompt_ids.shape[-1]:], skip_special_tokens=True)
@@ -266,7 +266,10 @@ async def analyze_scan(
 ):
     # Reads the image from the website
     image_data = await image.read()
-    scan_image = Image.open(io.BytesIO(image_data)).convert("RGB")
+    try:
+        scan_image = Image.open(io.BytesIO(image_data)).convert("RGB")
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to open image file: {str(e)}. Please ensure it is a valid JPG or PNG."}
 
     # Format the prompt
     messages = [
@@ -302,7 +305,10 @@ async def chat_scan(
         return {"status": "error", "message": f"Invalid JSON in history parameter: {str(e)}"}
     
     image_data = await image.read()
-    scan_image = Image.open(io.BytesIO(image_data)).convert("RGB")
+    try:
+        scan_image = Image.open(io.BytesIO(image_data)).convert("RGB")
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to open image file: {str(e)}. Please ensure it is a valid JPG or PNG."}
 
     messages = []
     for i, msg in enumerate(history_list):
@@ -344,80 +350,132 @@ async def health():
 # 4. Dermatology Grad-CAM Endpoint
 @app.post("/analyze-dermo")
 async def analyze_dermo_scan(
-    image: UploadFile = File(...)
+    image: UploadFile = File(...),
+    api_key: str = Depends(get_api_key)
 ):
     image_data = await image.read()
-    orig_img = Image.open(io.BytesIO(image_data)).convert("RGB")
-    
-    # Preprocess
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
-    input_tensor = transform(orig_img).unsqueeze(0)
-    
-    # Use global resnet_model
-    global resnet_model
-    dermo_model = resnet_model
-    
-    gradients = []
-    activations = []
-    
-    def backward_hook(module, grad_input, grad_output):
-        gradients.append(grad_output[0])
-        
-    def forward_hook(module, input, output):
-        activations.append(output)
-        
-    # Hook the last conv layer
-    target_layer = dermo_model.layer4[-1].conv2
-    target_layer.register_forward_hook(forward_hook)
-    target_layer.register_full_backward_hook(backward_hook)
-    
-    # Forward pass
-    output = dermo_model(input_tensor)
-    pred_class = output.argmax(dim=1).item()
-    
-    # Backward pass
-    dermo_model.zero_grad()
-    output[0, pred_class].backward()
-    
-    # Calculate CAM
-    grads = gradients[0].cpu().data.numpy()[0]
-    acts = activations[0].cpu().data.numpy()[0]
-    
-    weights = np.mean(grads, axis=(1, 2))
-    cam = np.zeros(acts.shape[1:], dtype=np.float32)
-    for i, w in enumerate(weights):
-        cam += w * acts[i]
-        
-    cam = np.maximum(cam, 0)
-    cam = cv2.resize(cam, (orig_img.width, orig_img.height))
-    # Avoid division by zero
-    cam_max = np.max(cam)
-    if cam_max > 0:
-        cam = cam / cam_max
-        
-    # Convert to heatmap
-    heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
-    
-    # Overlay on original image
-    orig_cv = cv2.cvtColor(np.array(orig_img), cv2.COLOR_RGB2BGR)
-    overlay = cv2.addWeighted(orig_cv, 0.6, heatmap, 0.4, 0)
-    
-    # Convert back to RGB and base64
-    overlay_rgb = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)
-    result_img = Image.fromarray(overlay_rgb)
-    
-    buffered = io.BytesIO()
-    result_img.save(buffered, format="JPEG")
-    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    
+    try:
+        orig_img = Image.open(io.BytesIO(image_data)).convert("RGB")
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to process image for Grad-CAM: {str(e)}"}
+
+    # --- VRAM management: free MedGemma before loading ResNet onto GPU ---
+    medgemma_was_loaded = ai_mode.startswith("medgemma")
+    if medgemma_was_loaded:
+        print(" [VRAM] Unloading MedGemma to make room for Grad-CAM analysis...")
+        _unload_model()
+
+    try:
+        # Preprocess
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        input_tensor = transform(orig_img).unsqueeze(0)
+
+        # Use global resnet_model
+        global resnet_model
+        dermo_model = resnet_model
+
+        gradients = []
+        activations = []
+
+        def backward_hook(module, grad_input, grad_output):
+            gradients.append(grad_output[0])
+
+        def forward_hook(module, input, output):
+            activations.append(output)
+
+        # Hook the last conv layer
+        target_layer = dermo_model.layer4[-1].conv2
+        fwd_handle = target_layer.register_forward_hook(forward_hook)
+        bwd_handle = target_layer.register_full_backward_hook(backward_hook)
+
+        # Forward pass
+        output = dermo_model(input_tensor)
+        pred_class = output.argmax(dim=1).item()
+
+        # Backward pass
+        dermo_model.zero_grad()
+        output[0, pred_class].backward()
+
+        # Remove hooks immediately to avoid accumulation across requests
+        fwd_handle.remove()
+        bwd_handle.remove()
+
+        # Calculate CAM
+        grads = gradients[0].cpu().data.numpy()[0]
+        acts = activations[0].cpu().data.numpy()[0]
+
+        weights = np.mean(grads, axis=(1, 2))
+        cam = np.zeros(acts.shape[1:], dtype=np.float32)
+        for i, w in enumerate(weights):
+            cam += w * acts[i]
+
+        cam = np.maximum(cam, 0)
+        cam = cv2.resize(cam, (orig_img.width, orig_img.height))
+        # Avoid division by zero
+        cam_max = np.max(cam)
+        if cam_max > 0:
+            cam = cam / cam_max
+
+        # Convert to heatmap
+        heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
+
+        # Overlay on original image
+        orig_cv = cv2.cvtColor(np.array(orig_img), cv2.COLOR_RGB2BGR)
+        overlay = cv2.addWeighted(orig_cv, 0.6, heatmap, 0.4, 0)
+
+        # Convert back to RGB and base64
+        overlay_rgb = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)
+        result_img = Image.fromarray(overlay_rgb)
+
+        buffered = io.BytesIO()
+        result_img.save(buffered, format="JPEG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+    finally:
+        # --- VRAM management: reload MedGemma if it was active before ---
+        if medgemma_was_loaded:
+            print(" [VRAM] Reloading MedGemma after Grad-CAM analysis...")
+            try:
+                _load_model()
+            except Exception as e:
+                print(f" [VRAM] Warning: Failed to reload MedGemma after Grad-CAM: {e}")
+
     return {
         "status": "success", 
         "heatmap": f"data:image/jpeg;base64,{img_str}"
     }
+
+# ─── 5. Doctor Profiles ───────────────────────────────────────────────────────
+_DOCTORS_PATH = os.path.join(os.path.dirname(__file__), "data", "doctors.json")
+
+def _load_doctors() -> list[dict]:
+    """Load doctors from the JSON seed file."""
+    try:
+        with open(_DOCTORS_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+@app.get("/doctors")
+async def get_doctors(specialization: str | None = None):
+    """Return all doctors, optionally filtered by specialization."""
+    doctors = _load_doctors()
+    if specialization:
+        doctors = [d for d in doctors if d["specialization"].lower() == specialization.lower()]
+    return {"status": "success", "doctors": doctors, "count": len(doctors)}
+
+@app.get("/doctors/{doctor_id}")
+async def get_doctor(doctor_id: str):
+    """Return a single doctor by ID."""
+    doctors = _load_doctors()
+    for d in doctors:
+        if d["id"] == doctor_id:
+            return {"status": "success", "doctor": d}
+    raise HTTPException(status_code=404, detail=f"Doctor '{doctor_id}' not found")
 
 if __name__ == "__main__":
     import uvicorn

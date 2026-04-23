@@ -26,9 +26,7 @@ export default function PatientPortal() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  useEffect(() => { scrollToBottom(); }, [messages]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -48,35 +46,24 @@ export default function PatientPortal() {
     if (e.target.files?.[0]) setUploadedFile(e.target.files[0]);
   };
 
-  // Initial Scan Analysis
   const handleAnalyze = async () => {
     if (!uploadedFile) return;
-
     setIsLoading(true);
     setMessages([]);
-
     const fullPrompt = `Act as a helpful medical AI. The patient reports these symptoms: "${symptoms || 'None reported'}". Analyze this scan and provide a clear, patient-friendly explanation of the findings.`;
-    
     const initialMessage: ChatMessage = { role: 'user', content: fullPrompt };
     const history = [initialMessage];
-    
     setMessages(history);
-
     const formData = new FormData();
     formData.append("image", uploadedFile);
     formData.append("history", JSON.stringify(history));
-
     try {
-      const response = await fetch("http://127.0.0.1:8000/chat", {
+      const response = await fetch("http://localhost:8000/chat", {
         method: "POST",
-        headers: {
-          "x-api-key": process.env.NEXT_PUBLIC_OMNIMED_API_KEY || "your-default-secret-key"
-        },
+        headers: { "x-api-key": process.env.NEXT_PUBLIC_OMNIMED_API_KEY || "your-default-secret-key" },
         body: formData,
       });
-
       if (!response.ok) throw new Error("Backend not responding");
-
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
     } catch (error) {
@@ -87,32 +74,23 @@ export default function PatientPortal() {
     }
   };
 
-  // Follow up chat
   const handleSendMessage = async () => {
     if (!chatInput.trim() || !uploadedFile) return;
-
     const newUserMsg: ChatMessage = { role: 'user', content: chatInput };
     const newHistory = [...messages, newUserMsg];
-    
     setMessages(newHistory);
     setChatInput('');
     setIsLoading(true);
-
     const formData = new FormData();
     formData.append("image", uploadedFile);
     formData.append("history", JSON.stringify(newHistory));
-
     try {
-      const response = await fetch("http://127.0.0.1:8000/chat", {
+      const response = await fetch("http://localhost:8000/chat", {
         method: "POST",
-        headers: {
-          "x-api-key": process.env.NEXT_PUBLIC_OMNIMED_API_KEY || "your-default-secret-key"
-        },
+        headers: { "x-api-key": process.env.NEXT_PUBLIC_OMNIMED_API_KEY || "your-default-secret-key" },
         body: formData,
       });
-
       if (!response.ok) throw new Error("Backend not responding");
-
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
     } catch (error) {
@@ -124,148 +102,106 @@ export default function PatientPortal() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-8rem)] bg-white">
+    <div className="min-h-[calc(100vh-4rem)]">
       <SpecialistModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">OmniMed <span className="text-blue-600">Patient Care</span></h1>
-          <p className="mt-4 text-lg text-gray-500">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-12 text-center animate-fade-in-up">
+          <h1 className="text-4xl font-bold text-foreground tracking-tight">
+            OmniMed <span className="text-gradient">Patient Care</span>
+          </h1>
+          <p className="mt-4 text-lg text-muted-foreground">
             Upload your scan and chat instantly with your private AI second opinion.
           </p>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-12 h-full">
-          {/* Input Section */}
-          <div className="lg:col-span-4 space-y-6">
+          {/* Left Sidebar */}
+          <div className="lg:col-span-4 space-y-6 animate-fade-in-up delay-100">
             <div
-              ref={dragRef}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
+              ref={dragRef} onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
               onClick={() => inputRef.current?.click()}
-              className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-10 transition-all bg-gray-50 hover:border-blue-400 ${
-                isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-              } ${uploadedFile ? 'border-blue-600 bg-blue-50/30' : ''}`}
+              className={`glass-card flex cursor-pointer flex-col items-center justify-center p-10 transition-all duration-300 hover:shadow-glow-sm ${isDragActive ? 'border-primary shadow-glow-sm scale-[1.02]' : ''} ${uploadedFile ? 'border-primary/50' : ''}`}
             >
               <input ref={inputRef} type="file" accept="image/*" onChange={handleFileInput} className="hidden" />
-              <Upload className={`h-10 w-10 mb-4 ${uploadedFile ? 'text-blue-600' : 'text-gray-400'}`} />
-              <p className="text-center font-bold text-gray-900">
-                {uploadedFile ? uploadedFile.name : 'Choose Scan File'}
-              </p>
-              <p className="mt-1 text-sm text-gray-500">X-Ray, MRI, or CT (JPG/PNG)</p>
+              <div className={`flex h-14 w-14 items-center justify-center rounded-xl mb-4 transition-all ${uploadedFile ? 'bg-gradient-cta text-white shadow-glow-sm' : 'bg-muted text-muted-foreground'}`}>
+                <Upload className="h-6 w-6" />
+              </div>
+              <p className="text-center font-semibold text-foreground">{uploadedFile ? uploadedFile.name : 'Choose Scan File'}</p>
+              <p className="mt-1 text-sm text-muted-foreground">X-Ray, MRI, or CT (JPG/PNG)</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                What are you feeling?
-              </label>
-              <textarea
-                value={symptoms}
-                onChange={(e) => setSymptoms(e.target.value)}
-                placeholder="Describe any pain or symptoms..."
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                rows={4}
-              />
+            <div className="glass-card p-6">
+              <label className="block text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">What are you feeling?</label>
+              <textarea value={symptoms} onChange={(e) => setSymptoms(e.target.value)} placeholder="Describe any pain or symptoms..."
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none" rows={4} />
             </div>
 
-            <button
-              onClick={handleAnalyze}
-              disabled={!uploadedFile || (isLoading && messages.length === 0)}
-              className="w-full rounded-xl bg-blue-600 py-4 text-lg font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:bg-gray-200 transition-all flex justify-center items-center gap-2"
-            >
-              {isLoading && messages.length === 0 ? (
-                <><Loader2 className="animate-spin h-5 w-5" /> Analyzing...</>
-              ) : (
-                'Start Diagnosis'
-              )}
+            <button onClick={handleAnalyze} disabled={!uploadedFile || (isLoading && messages.length === 0)}
+              className="w-full rounded-xl bg-gradient-cta py-4 text-lg font-bold text-white shadow-glow-sm transition-all hover:shadow-glow hover:scale-[1.01] disabled:opacity-40 disabled:shadow-none disabled:scale-100 flex justify-center items-center gap-2">
+              {isLoading && messages.length === 0 ? (<><Loader2 className="animate-spin h-5 w-5" /> Analyzing...</>) : ('Start Diagnosis')}
             </button>
           </div>
 
-          {/* Chat Window Section */}
-          <div className="lg:col-span-8 flex flex-col">
+          {/* Right: Chat */}
+          <div className="lg:col-span-8 flex flex-col animate-fade-in-up delay-200">
             {messages.length > 0 ? (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col min-h-[600px] h-full rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-100/50 overflow-hidden">
-                {/* Header */}
-                <div className="bg-blue-50 border-b border-blue-100 px-6 py-4 flex justify-between items-center">
+              <div className="flex flex-col min-h-[600px] h-full glass-card overflow-hidden">
+                <div className="bg-gradient-cta px-6 py-4 flex justify-between items-center">
                   <div>
-                    <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest">OmniMed AI Chat</h3>
-                    <p className="text-xs text-gray-500">Ask follow-up questions about your scan</p>
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest">OmniMed AI Chat</h3>
+                    <p className="text-xs text-white/60">Ask follow-up questions about your scan</p>
                   </div>
-                  <button onClick={() => setIsModalOpen(true)} className="text-xs flex items-center gap-1 bg-gray-900 text-white px-3 py-2 rounded-lg font-bold hover:bg-black transition-all">
+                  <button onClick={() => setIsModalOpen(true)} className="text-xs flex items-center gap-1.5 bg-white/10 backdrop-blur-sm text-white px-3.5 py-2 rounded-lg font-bold hover:bg-white/20 transition-all border border-white/20">
                     Contact Specialist <ArrowRight className="h-3 w-3" />
                   </button>
                 </div>
 
-                {/* Messages area */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/30">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-background/50">
                   {messages.map((msg, idx) => {
-                    // System/Initial Prompt Formatting
-                    if (idx === 0) {
-                      return (
-                        <div key={idx} className="flex flex-col items-center my-4">
-                           <div className="bg-white px-4 py-3 rounded-lg text-xs text-gray-500 border border-gray-200 uppercase tracking-widest font-semibold flex items-center gap-2">
-                             <Upload className="h-3 w-3" /> Scan & Symptoms Submitted
-                           </div>
+                    if (idx === 0) return (
+                      <div key={idx} className="flex flex-col items-center my-4">
+                        <div className="glass px-4 py-3 rounded-lg text-xs text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-2">
+                          <Upload className="h-3 w-3" /> Scan & Symptoms Submitted
                         </div>
-                      );
-                    }
-                    
+                      </div>
+                    );
                     const isUser = msg.role === 'user';
                     return (
                       <div key={idx} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-                        <div className={`p-4 rounded-2xl shadow-sm text-sm max-w-[85%] ${
-                          isUser 
-                            ? 'bg-blue-600 text-white rounded-tr-sm' 
-                            : 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'
-                        }`}>
-                          {!isUser && <span className="font-black text-[10px] text-blue-500 uppercase tracking-widest block mb-2 flex items-center gap-1"><Brain className="h-3 w-3"/> OmniMed AI</span>}
-                          <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                        <div className={`p-4 rounded-2xl text-sm max-w-[85%] ${isUser ? 'bg-gradient-cta text-white rounded-tr-sm shadow-glow-sm' : 'glass rounded-tl-sm'}`}>
+                          {!isUser && <span className="font-black text-[10px] text-primary uppercase tracking-widest mb-2 flex items-center gap-1"><Brain className="h-3 w-3"/> OmniMed AI</span>}
+                          <p className={`leading-relaxed whitespace-pre-wrap ${!isUser ? 'text-foreground' : ''}`}>{msg.content}</p>
                         </div>
                       </div>
                     );
                   })}
-                  
                   {isLoading && messages.length > 0 && (
-                     <div className="flex flex-col items-start px-2">
-                        <div className="bg-white p-3 rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm border-t-0">
-                          <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                        </div>
-                     </div>
+                    <div className="flex flex-col items-start px-2">
+                      <div className="glass p-3 rounded-2xl rounded-tl-sm"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+                    </div>
                   )}
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input area */}
-                <div className="p-4 bg-white border-t border-gray-100">
+                <div className="p-4 bg-card/80 border-t border-border/50">
                   <div className="relative">
-                    <input 
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
+                    <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && !isLoading && chatInput.trim() && handleSendMessage()}
                       placeholder="Ask me anything about your results..."
-                      className="w-full pl-4 pr-12 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm bg-gray-50"
-                      disabled={isLoading}
-                    />
-                    <button 
-                      onClick={handleSendMessage}
-                      disabled={!chatInput.trim() || isLoading}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:opacity-50 transition-all"
-                    >
+                      className="w-full pl-4 pr-12 py-3 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm text-foreground placeholder:text-muted-foreground/50"
+                      disabled={isLoading} />
+                    <button onClick={handleSendMessage} disabled={!chatInput.trim() || isLoading}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-cta text-white rounded-lg hover:shadow-glow-sm disabled:opacity-30 transition-all">
                       <Send className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="mt-3 text-center">
-                    <p className="text-[10px] text-gray-400">AI assessments do not replace professional medical judgment. Always consult a physician.</p>
-                  </div>
+                  <p className="mt-3 text-center text-[10px] text-muted-foreground/60">AI assessments do not replace professional medical judgment. Always consult a physician.</p>
                 </div>
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-gray-50/50 p-12 text-center text-gray-400 min-h-[500px]">
-                <Brain className="h-12 w-12 text-gray-300 mb-4" />
-                <p className="text-sm font-medium">Your interactive AI analysis will appear here.</p>
+              <div className="h-full flex flex-col items-center justify-center glass-card p-12 text-center min-h-[500px]">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4"><Brain className="h-8 w-8" /></div>
+                <p className="text-sm font-medium text-muted-foreground">Your interactive AI analysis will appear here.</p>
               </div>
             )}
           </div>

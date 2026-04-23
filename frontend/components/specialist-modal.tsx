@@ -1,111 +1,115 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import Image from 'next/image';
+import DoctorCard from '@/components/DoctorCard';
+import { Doctor } from '@/types/doctor';
 
 interface SpecialistModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const SPECIALIZATIONS = ['All', 'Dermatology', 'Radiology', 'Neurology', 'Oncology'] as const;
+
 export default function SpecialistModal({ isOpen, onClose }: SpecialistModalProps) {
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<string>('All');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchDoctors = async () => {
+      setLoading(true); setError(null);
+      try {
+        const params = filter !== 'All' ? `?specialization=${filter}` : '';
+        const res = await fetch(`/api/doctors${params}`);
+        if (!res.ok) throw new Error(`Failed to fetch doctors (${res.status})`);
+        const data = await res.json();
+        setDoctors(data.doctors || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load doctors');
+        setDoctors([]);
+      } finally { setLoading(false); }
+    };
+    fetchDoctors();
+  }, [isOpen, filter]);
+
   if (!isOpen) return null;
 
-  const doctors = [
-    {
-      id: 1,
-      name: 'Dr. Sarah Chen, MD',
-      specialty: 'Lead Radiologist',
-      experience: '12 Years Experience',
-      status: 'Available Now',
-      statusColor: 'bg-green-100 text-green-800',
-      image: '/dr-sarah-chen.jpg',
-      phone: '555-0198',
-      buttonText: 'Connect via Call (555-0198)',
-      buttonStyle: 'bg-green-600 hover:bg-green-700 text-white',
-    },
-    {
-      id: 2,
-      name: 'Dr. Marcus Thorne',
-      specialty: 'Orthopedic Specialist',
-      experience: '8 Years Experience',
-      status: '5 Min Wait',
-      statusColor: 'bg-blue-100 text-blue-800',
-      image: '/dr-marcus-thorne.jpg',
-      phone: null,
-      buttonText: 'Request Review',
-      buttonStyle: 'border border-gray-300 bg-white text-gray-900 hover:bg-gray-50',
-    },
-  ];
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="relative mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-8">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute right-6 top-6 p-1 text-gray-500 hover:text-gray-700 transition-colors"
-          aria-label="Close modal"
-        >
-          <X className="h-6 w-6" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="relative mx-4 max-h-[90vh] w-full max-w-3xl overflow-y-auto glass-card p-8">
+        <button onClick={onClose}
+          className="absolute right-6 top-6 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all" aria-label="Close modal">
+          <X className="h-5 w-5" />
         </button>
 
-        {/* Modal Title */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Available Specialists Matching Your Scan
-        </h2>
-        <p className="text-gray-600 mb-8">
-          Connect with an experienced medical professional for a second opinion
-        </p>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Contact a <span className="text-gradient">Specialist</span></h2>
+        <p className="text-muted-foreground mb-6">Connect with an experienced medical professional for a second opinion</p>
 
-        {/* Doctors List */}
-        <div className="space-y-6 mb-8">
-          {doctors.map((doctor) => (
-            <div
-              key={doctor.id}
-              className="rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow"
-            >
-              <div className="flex gap-6">
-                {/* Doctor Image */}
-                <div className="flex-shrink-0">
-                  <Image
-                    src={doctor.image}
-                    alt={doctor.name}
-                    width={120}
-                    height={120}
-                    className="h-24 w-24 rounded-full object-cover"
-                  />
-                </div>
-
-                {/* Doctor Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">{doctor.name}</h3>
-                      <p className="text-gray-600">{doctor.specialty}</p>
-                      <p className="text-sm text-gray-500 mt-1">{doctor.experience}</p>
-                    </div>
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${doctor.statusColor}`}>
-                      {doctor.status}
-                    </span>
-                  </div>
-
-                  {/* Action Button */}
-                  <button
-                    className={`px-6 py-3 rounded-lg font-semibold text-sm transition-colors ${doctor.buttonStyle}`}
-                  >
-                    {doctor.buttonText}
-                  </button>
-                </div>
-              </div>
-            </div>
+        {/* Specialization Filter */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {SPECIALIZATIONS.map((spec) => (
+            <button key={spec} onClick={() => setFilter(spec)}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                filter === spec
+                  ? 'bg-gradient-cta text-white shadow-glow-sm'
+                  : 'glass text-muted-foreground hover:text-foreground'
+              }`}>
+              {spec}
+            </button>
           ))}
         </div>
 
-        {/* Security Note */}
-        <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
-          <p className="text-xs text-gray-600">
-            <span className="font-semibold text-gray-900">Privacy & Security:</span> The AI's preliminary findings and your uploaded scan will be securely transmitted to the doctor. All data is encrypted and HIPAA-compliant.
+        {/* Loading */}
+        {loading && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="glass-card p-5 animate-pulse">
+                <div className="flex gap-4">
+                  <div className="h-[80px] w-[80px] rounded-lg bg-muted" />
+                  <div className="flex-1 space-y-2 py-1">
+                    <div className="h-4 w-3/4 bg-muted rounded" />
+                    <div className="h-3 w-1/2 bg-muted rounded" />
+                    <div className="h-3 w-2/3 bg-muted rounded" />
+                  </div>
+                </div>
+                <div className="h-9 w-full bg-muted rounded-lg mt-4" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error */}
+        {error && !loading && (
+          <div className="glass-card p-6 border-destructive/50 text-center">
+            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-xs text-destructive/60 mt-1">Make sure the FastAPI backend is running on port 8000.</p>
+          </div>
+        )}
+
+        {/* Empty */}
+        {!loading && !error && doctors.length === 0 && (
+          <div className="glass-card p-12 text-center">
+            <p className="text-muted-foreground">No specialists found for &ldquo;{filter}&rdquo;.</p>
+          </div>
+        )}
+
+        {/* Doctor Grid */}
+        {!loading && !error && doctors.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2 mb-8">
+            {doctors.map(doctor => <DoctorCard key={doctor.id} doctor={doctor} />)}
+          </div>
+        )}
+
+        {/* Privacy Note */}
+        <div className="glass-card p-4 mt-4">
+          <p className="text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">Privacy &amp; Security:</span>{' '}
+            The AI&apos;s preliminary findings and your uploaded scan will be securely transmitted to the doctor.
+            All data is encrypted and HIPAA-compliant.
           </p>
         </div>
       </div>

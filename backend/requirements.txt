@@ -9,3 +9,8 @@ torchvision
 
 # Optional: only needed for real MedGemma inference (api.py will run without it)
 unsloth
+
+# Testing
+pytest
+httpx
+pytest-asyncio

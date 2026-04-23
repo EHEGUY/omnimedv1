@@ -9,7 +9,7 @@ print(" Initializing OmniMed Engine on RTX 4050...")
 # 2. Load the model (This will trigger the 3.5GB download)
 model, tokenizer = FastLanguageModel.from_pretrained(
     model_name = model_name,
-    load_in_4bit = True, # This is why it won't crash your 6GB card
+    load_in_4bit = True, # This is why it won't crash my 6GB card
     device_map = "cuda",
 )
 

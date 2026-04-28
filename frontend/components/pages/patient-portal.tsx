@@ -1,13 +1,54 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Upload, ArrowRight, Loader2, Send, Brain } from 'lucide-react';
+import { Upload, ArrowRight, Loader2, Send, Brain, FileText } from 'lucide-react';
 import SpecialistModal from '@/components/specialist-modal';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+const cleanAIResponse = (text: string) => {
+  if (!text) return '';
+  
+  let result = text;
+  result = result.replace(/<think>[\s\S]*?<\/think>/gi, '');
+
+  const thoughtStartMatch = result.match(/<?\/?unused94>?thought/i);
+  if (thoughtStartMatch && thoughtStartMatch.index !== undefined) {
+    const startIndex = thoughtStartMatch.index;
+    const searchString = result.substring(startIndex + thoughtStartMatch[0].length);
+    const closingMatch = searchString.match(/<?\/?unused94>?/i);
+    
+    if (closingMatch && closingMatch.index !== undefined) {
+      const endIndex = startIndex + thoughtStartMatch[0].length + closingMatch.index + closingMatch[0].length;
+      result = result.substring(0, startIndex) + result.substring(endIndex);
+    } else {
+      // If no closing tag is found, check if the actual report started anyway (e.g., "**Findings:**")
+      const possibleReportStart = searchString.search(/\n(?:#|\*)*\s*(?:Findings|Patient|Impressions|Report|Diagnosis)/i);
+      if (possibleReportStart !== -1) {
+         // The thought process probably ended where the report heading starts
+         result = result.substring(0, startIndex) + searchString.substring(possibleReportStart);
+      } else {
+         const before = result.substring(0, startIndex).trim();
+         if (before) {
+            result = before;
+         } else {
+            return "The AI was still analyzing and reached its maximum text limit before it could finish your report. (The response only contained internal processing). Please try again or increase the backend token limit.";
+         }
+      }
+    }
+  }
+
+  result = result.replace(/<?\/?unused94>?/gi, '').trim();
+  
+  if (!result) {
+    return "The AI generated an internal analysis but failed to output a final response. Please try again.";
+  }
+
+  return result;
+};
 
 export default function PatientPortal() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -17,6 +58,7 @@ export default function PatientPortal() {
   const [chatInput, setChatInput] = useState('');
   const [isDragActive, setIsDragActive] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   
   const dragRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +107,7 @@ export default function PatientPortal() {
       });
       if (!response.ok) throw new Error("Backend not responding");
       const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: cleanAIResponse(data.response) }]);
     } catch (error) {
       console.error("Connection Error:", error);
       setMessages(prev => [...prev, { role: 'assistant', content: "Connection Error: Could not connect to the local OmniMed Engine. Please ensure your Python server (api.py) is running on port 8000." }]);
@@ -92,12 +134,110 @@ export default function PatientPortal() {
       });
       if (!response.ok) throw new Error("Backend not responding");
       const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: cleanAIResponse(data.response) }]);
     } catch (error) {
       console.error("Connection Error:", error);
       setMessages(prev => [...prev, { role: 'assistant', content: "Connection Error. Could not fetch response." }]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    if (!uploadedFile) return;
+    setIsGeneratingReport(true);
+    
+    const reportPrompt = "Based strictly on the image provided and our conversation history, generate a final, comprehensive medical report structured with Findings, Impressions, and Recommendations. Do NOT ask me for any missing patient information (Name, DOB, etc.). If you lack specific details, simply omit them or use generic placeholders like [Patient Name]. Your entire response must be the generated report itself and nothing else.";
+    const newUserMsg: ChatMessage = { role: 'user', content: reportPrompt };
+    const historyForReport = [...messages, newUserMsg];
+    
+    const formData = new FormData();
+    formData.append("image", uploadedFile);
+    formData.append("history", JSON.stringify(historyForReport));
+    
+    try {
+      const response = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: { "x-api-key": process.env.NEXT_PUBLIC_OMNIMED_API_KEY || "your-default-secret-key" },
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Backend not responding");
+      const data = await response.json();
+      
+      const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib');
+      const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
+      let page = pdfDoc.addPage([595.28, 841.89]);
+      let { width, height } = page.getSize();
+      
+      let yPos = height - 50;
+      
+      page.drawText("OmniMed AI Medical Report", { x: 50, y: yPos, size: 22, font: boldFont, color: rgb(0.13, 0.13, 0.13) });
+      
+      yPos -= 20;
+      page.drawText(`Generated on: ${new Date().toLocaleString()}`, { x: 50, y: yPos, size: 10, font: font, color: rgb(0.4, 0.4, 0.4) });
+      
+      yPos -= 15;
+      page.drawText("CONFIDENTIAL - FOR MEDICAL PROFESSIONAL REVIEW ONLY", { x: 50, y: yPos, size: 10, font: font, color: rgb(0.4, 0.4, 0.4) });
+      
+      yPos -= 10;
+      page.drawLine({ start: { x: 50, y: yPos }, end: { x: width - 50, y: yPos }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+      
+      yPos -= 30;
+      
+      const cleanText = cleanAIResponse(data.response).replace(/\*\*/g, '');
+      const wrapText = (text: string, maxWidth: number, font: any, fontSize: number) => {
+        const words = text.split(' ');
+        let lines: string[] = [];
+        let currentLine = words[0] || '';
+
+        for (let i = 1; i < words.length; i++) {
+          const word = words[i];
+          const textWidth = font.widthOfTextAtSize(currentLine + " " + word, fontSize);
+          if (textWidth < maxWidth) {
+            currentLine += " " + word;
+          } else {
+            lines.push(currentLine);
+            currentLine = word;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines;
+      };
+
+      const paragraphs = cleanText.split('\n');
+      for (const p of paragraphs) {
+        if (!p.trim()) {
+           yPos -= 15;
+           continue;
+        }
+        const lines = wrapText(p, width - 100, font, 12);
+        for (const line of lines) {
+          if (yPos < 50) {
+            page = pdfDoc.addPage([595.28, 841.89]);
+            yPos = height - 50;
+          }
+          page.drawText(line, { x: 50, y: yPos, size: 12, font: font, color: rgb(0.15, 0.15, 0.15) });
+          yPos -= 16;
+        }
+        yPos -= 10;
+      }
+      
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `OmniMed_Medical_Report.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error("Connection Error:", error);
+    } finally {
+      setIsGeneratingReport(false);
     }
   };
 
@@ -151,9 +291,14 @@ export default function PatientPortal() {
                     <h3 className="text-sm font-black text-white uppercase tracking-widest">OmniMed AI Chat</h3>
                     <p className="text-xs text-white/60">Ask follow-up questions about your scan</p>
                   </div>
-                  <button onClick={() => setIsModalOpen(true)} className="text-xs flex items-center gap-1.5 bg-white/10 backdrop-blur-sm text-white px-3.5 py-2 rounded-lg font-bold hover:bg-white/20 transition-all border border-white/20">
-                    Contact Specialist <ArrowRight className="h-3 w-3" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={handleGenerateReport} disabled={isGeneratingReport || isLoading} className="text-xs flex items-center gap-1.5 bg-white/10 backdrop-blur-sm text-white px-3.5 py-2 rounded-lg font-bold hover:bg-white/20 transition-all border border-white/20 disabled:opacity-50">
+                      {isGeneratingReport ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />} Report
+                    </button>
+                    <button onClick={() => setIsModalOpen(true)} className="text-xs flex items-center gap-1.5 bg-white/10 backdrop-blur-sm text-white px-3.5 py-2 rounded-lg font-bold hover:bg-white/20 transition-all border border-white/20">
+                      Contact Specialist <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-background/50">

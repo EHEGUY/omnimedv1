@@ -231,7 +231,7 @@ def _generate_medgemma(messages: list[dict], scan_image: Image.Image) -> str:
         prompt_text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = processor(text=prompt_text, images=scan_image, return_tensors="pt").to("cuda")
         with torch.inference_mode():
-            max_new_tokens = int(os.getenv("OMNIMED_MAX_NEW_TOKENS", "600"))
+            max_new_tokens = int(os.getenv("OMNIMED_MAX_NEW_TOKENS", "4096"))
             outputs = model.generate(**inputs, max_new_tokens=max_new_tokens)
         input_len = inputs["input_ids"].shape[-1]
         if hasattr(processor, "decode"):
@@ -249,7 +249,7 @@ def _generate_medgemma(messages: list[dict], scan_image: Image.Image) -> str:
             return_tensors="pt",
         ).to("cuda")
         with torch.inference_mode():
-            max_new_tokens = int(os.getenv("OMNIMED_MAX_NEW_TOKENS", "600"))
+            max_new_tokens = int(os.getenv("OMNIMED_MAX_NEW_TOKENS", "4096"))
             outputs = model.generate(input_ids=prompt_ids, max_new_tokens=max_new_tokens)
         if hasattr(processor, "decode"):
             return fallback_warning + processor.decode(outputs[0][prompt_ids.shape[-1]:], skip_special_tokens=True)

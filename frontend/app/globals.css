@@ -308,3 +308,22 @@ html {
 .animate-pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
 }
+
+/* Scanning overlay animations */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.animate-scanline {
+  animation: scanline 2s linear infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}

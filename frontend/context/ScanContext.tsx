@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, ReactNode } from 'react';
 
 export interface ScanResult {
   scanId: string;
@@ -24,8 +24,10 @@ const ScanContext = createContext<ScanContextType>({
 export function ScanContextProvider({ children }: { children: ReactNode }) {
   const [activeScan, setActiveScan] = useState<ScanResult | null>(null);
 
+  const value = useMemo(() => ({ activeScan, setActiveScan }), [activeScan]);
+
   return (
-    <ScanContext.Provider value={{ activeScan, setActiveScan }}>
+    <ScanContext.Provider value={value}>
       {children}
     </ScanContext.Provider>
   );

@@ -14,7 +14,7 @@ import numpy as np
 import torchvision.models as models
 import torchvision.transforms as transforms
 from contextlib import asynccontextmanager
-
+import threading
 # Optional AI engines. Backend must boot without them.
 _UNSLOTH_IMPORT_ERROR = None
 try:
@@ -39,6 +39,7 @@ except Exception as e:
     _TRANSFORMERS_IMPORT_ERROR = str(e)
 
 resnet_model = None
+gradcam_lock = threading.Lock()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,10 +48,15 @@ async def lifespan(app: FastAPI):
     resnet_model.eval()
 
     if _AUTOSTART:
-        try:
-            _load_model()
-        except Exception as e:
-            print(f" Autostart model load failed; staying in MOCK mode. Error: {e}")
+        def background_load():
+            try:
+                _load_model()
+            except Exception as e:
+                print(f" Autostart model load failed; staying in MOCK mode. Error: {e}")
+        
+        # Load the model in the background so it doesn't block server startup
+        import threading
+        threading.Thread(target=background_load, daemon=True).start()
     yield
 
 # 1. Start the API
@@ -359,11 +365,7 @@ async def analyze_dermo_scan(
     except Exception as e:
         return {"status": "error", "message": f"Failed to process image for Grad-CAM: {str(e)}"}
 
-    # --- VRAM management: free MedGemma before loading ResNet onto GPU ---
-    medgemma_was_loaded = ai_mode.startswith("medgemma")
-    if medgemma_was_loaded:
-        print(" [VRAM] Unloading MedGemma to make room for Grad-CAM analysis...")
-        _unload_model()
+    # No need to unload MedGemma; ResNet18 is very small and runs fine alongside it.
 
     try:
         # Preprocess
@@ -375,38 +377,39 @@ async def analyze_dermo_scan(
         input_tensor = transform(orig_img).unsqueeze(0)
 
         # Use global resnet_model
-        global resnet_model
+        global resnet_model, gradcam_lock
         dermo_model = resnet_model
 
-        gradients = []
-        activations = []
+        with gradcam_lock:
+            gradients = []
+            activations = []
 
-        def backward_hook(module, grad_input, grad_output):
-            gradients.append(grad_output[0])
+            def backward_hook(module, grad_input, grad_output):
+                gradients.append(grad_output[0])
 
-        def forward_hook(module, input, output):
-            activations.append(output)
+            def forward_hook(module, input, output):
+                activations.append(output)
 
-        # Hook the last conv layer
-        target_layer = dermo_model.layer4[-1].conv2
-        fwd_handle = target_layer.register_forward_hook(forward_hook)
-        bwd_handle = target_layer.register_full_backward_hook(backward_hook)
+            # Hook the last conv layer
+            target_layer = dermo_model.layer4[-1].conv2
+            fwd_handle = target_layer.register_forward_hook(forward_hook)
+            bwd_handle = target_layer.register_full_backward_hook(backward_hook)
 
-        # Forward pass
-        output = dermo_model(input_tensor)
-        pred_class = output.argmax(dim=1).item()
+            # Forward pass
+            output = dermo_model(input_tensor)
+            pred_class = output.argmax(dim=1).item()
 
-        # Backward pass
-        dermo_model.zero_grad()
-        output[0, pred_class].backward()
+            # Backward pass
+            dermo_model.zero_grad()
+            output[0, pred_class].backward()
 
-        # Remove hooks immediately to avoid accumulation across requests
-        fwd_handle.remove()
-        bwd_handle.remove()
+            # Remove hooks immediately to avoid accumulation across requests
+            fwd_handle.remove()
+            bwd_handle.remove()
 
-        # Calculate CAM
-        grads = gradients[0].cpu().data.numpy()[0]
-        acts = activations[0].cpu().data.numpy()[0]
+            # Calculate CAM
+            grads = gradients[0].cpu().data.numpy()[0]
+            acts = activations[0].cpu().data.numpy()[0]
 
         weights = np.mean(grads, axis=(1, 2))
         cam = np.zeros(acts.shape[1:], dtype=np.float32)
@@ -436,13 +439,7 @@ async def analyze_dermo_scan(
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     finally:
-        # --- VRAM management: reload MedGemma if it was active before ---
-        if medgemma_was_loaded:
-            print(" [VRAM] Reloading MedGemma after Grad-CAM analysis...")
-            try:
-                _load_model()
-            except Exception as e:
-                print(f" [VRAM] Warning: Failed to reload MedGemma after Grad-CAM: {e}")
+        pass
 
     return {
         "status": "success", 
